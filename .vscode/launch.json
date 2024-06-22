@@ -1,0 +1,23 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: process_data",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/pipeline/preprocess/process_data.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--train-path", "archive/fraudTrain.csv",
+                "--test-path", "archive/fraudTest.csv",
+                "--label-column", "is_fraud"
+            ],
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/.venv/bin/python"
+            }
+        }
+    ]
+}
