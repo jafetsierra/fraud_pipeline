@@ -63,6 +63,22 @@
                 "--test-input-path", "data/fraudTest.csv",
                 "--output-path", "data/prepared_data",
             ]
-        }
+        },
+        {
+            "name": "Python: model_selection",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pipeline.trainer.model_selection",
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/.venv/bin/python"
+            },
+            "args": [
+                "--train-data-path", "data/prepared_data",
+                "--config-path", "config/model_selection.json",
+                "--output-path", "models",
+                "--wandb-project", "fraud_detection"
+            ]
+        },
     ]
 }

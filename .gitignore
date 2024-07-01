@@ -17,6 +17,10 @@ wandb/*
 wandb
 wandb/
 
+models/*
+models/
+models
+
 .venv/*
 .venv
 .venv/
