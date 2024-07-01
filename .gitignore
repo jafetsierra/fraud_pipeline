@@ -9,6 +9,17 @@ Ca*
 archive/*
 archive.*
 archive
+data/*
+data/
+data
+
+wandb/*
+wandb
+wandb/
+
+.venv/*
+.venv
+.venv/
 # Distribution / packaging
 .Python
 build/

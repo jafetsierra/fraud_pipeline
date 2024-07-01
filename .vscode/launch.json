@@ -33,6 +33,36 @@
             "env": {
                 "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/.venv/bin/python"
             }
+        },
+        {
+            "name": "Python: EDA",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pipeline.eda.eda",
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/.venv/bin/python"
+            },
+            "args": [
+                "--input-path", "data/fraudTrain.csv",
+                "--output-path", "data/eda_output",
+                "--wandb-project", "fraud_detection"
+            ]
+        },
+        {
+            "name": "Python: preprocess",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pipeline.preprocess.process_data",
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/.venv/bin/python"
+            },
+            "args": [
+                "--train-input-path", "data/fraudTrain.csv",
+                "--test-input-path", "data/fraudTest.csv",
+                "--output-path", "data/prepared_data",
+            ]
         }
     ]
 }

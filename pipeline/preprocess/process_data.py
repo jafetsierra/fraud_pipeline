@@ -1,36 +1,53 @@
-import logging
-import typer
 import pandas as pd
-from typer import Option
-from typing_extensions import Annotated
-from pipeline.preprocess.utils import prepare_data
+from sklearn.preprocessing import StandardScaler
+import typer
+from typing import Annotated
+from cloudpathlib import AnyPath
 
-app = typer.Typer()
-
-@app.command()
-def main(
-    train_csv: Annotated[str, Option("--train-path")],
-    test_csv: Annotated[str, Option("--test-path")],
-    label_column: Annotated[str, Option("--label-column")],
-    train_data_path: Annotated[str, Option("--train-data-path")],
-    test_data_path: Annotated[str, Option("--test-data-path")],
+def data_preparation(
+    train_input_path: Annotated[str, typer.Option("--train-input-path", help="Path to the training data")],
+    test_input_path: Annotated[str, typer.Option("--test-input-path", help="Path to the test data")],
+    output_path: Annotated[str, typer.Option("--output-path", help="Path to save the prepared data")],
 ):
-    """Process the data for training."""
-    train_df = pd.read_csv(train_csv)
-    test_df = pd.read_csv(test_csv)
+    """Prepare data for training."""
 
-    # Prepare the training data
-    X_train, y_train, _ = prepare_data(train_df, label_column)
-    X_test, y_test, _ = prepare_data(test_df, label_column)
+    df_train = pd.read_csv(train_input_path)
+    df_test = pd.read_csv(test_input_path)
 
-    # Save the processed data
-    pd.DataFrame(X_train).to_csv(f"{train_data_path}_features.csv", index=False)
-    y_train.to_csv(f"{train_data_path}_labels.csv", index=False)
-    pd.DataFrame(X_test).to_csv(f"{test_data_path}_features.csv", index=False)
-    y_test.to_csv(f"{test_data_path}_labels.csv", index=False)
+    df_train = df_train.ffill()
+    df_train = df_test.ffill()
 
-    logging.info("Training data saved to %s", train_data_path)
-    logging.info("Test data saved to %s", test_data_path)
+    df_train['trans_date_trans_time'] = pd.to_datetime(df_train['trans_date_trans_time'])
+    df_test['trans_date_trans_time'] = pd.to_datetime(df_test['trans_date_trans_time'])
+
+    df_train['hour'] = df_train['trans_date_trans_time'].dt.hour
+    df_train['day'] = df_train['trans_date_trans_time'].dt.day
+    df_train['month'] = df_train['trans_date_trans_time'].dt.month
+
+    df_test['hour'] = df_test['trans_date_trans_time'].dt.hour
+    df_test['day'] = df_test['trans_date_trans_time'].dt.day
+    df_test['month'] = df_test['trans_date_trans_time'].dt.month
+
+    features = ['amt', 'city_pop', 'hour', 'day', 'month', 'lat', 'long', 'merch_lat', 'merch_long']
+    target = 'is_fraud'
+
+    X_train = df_train[features]
+    y_train = df_train[target]
+
+    X_test = df_test[features]
+    y_test = df_test[target]
+
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
+
+    output_dir = AnyPath(output_path)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    pd.DataFrame(X_train_scaled, columns=features).to_csv(output_dir / 'X_train.csv', index=False)
+    pd.DataFrame(X_test_scaled, columns=features).to_csv(output_dir / 'X_test.csv', index=False)
+    y_train.to_csv(output_dir / 'y_train.csv', index=False)
+    y_test.to_csv(output_dir / 'y_test.csv', index=False)
 
 if __name__ == "__main__":
-    app()
+    typer.run(data_preparation)
