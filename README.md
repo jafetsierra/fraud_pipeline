@@ -237,10 +237,7 @@ To run the complete fraud detection pipeline, execute the following steps in ord
 
 Ensure that you provide the correct paths and Weights & Biases project name for each step.
 
-## Contributing
-
-Feel free to submit issues or pull requests if you have suggestions for improvements or encounter any problems.
 
 ## License
 
-[Specify your license here]
+[None] since this is just a small test for bold
