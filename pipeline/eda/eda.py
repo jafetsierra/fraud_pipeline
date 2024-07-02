@@ -1,3 +1,4 @@
+# pylint: disable=line-too-long
 """
 Exploratory Data Analysis (EDA) Script
 
@@ -27,15 +28,17 @@ Note:
     Make sure to review and modify the script if your data structure differs.
 """
 
+from typing import Annotated
+
+import typer
 import pandas as pd
 import seaborn as sns
+import numpy as np
 import matplotlib.pyplot as plt
-import typer
-from typing import Annotated
 from cloudpathlib import AnyPath
 import wandb
-import numpy as np
 
+# pylint: disable=too-many-locals
 def eda(
     input_path: Annotated[str, typer.Option("--input-path", help="Path to the input data")],
     output_path: Annotated[str, typer.Option("--output-path", help="Path to save the output plots")],
@@ -49,18 +52,18 @@ def eda(
 
     df.pop('Unnamed: 0')
 
-    info = df.info()
     description = df.describe()
     description_table = wandb.Table(columns=description.columns,dataframe=description.reset_index())
     wandb.log({"description_table": description_table})
 
     output_dir = AnyPath(output_path)
+    # pylint: disable=no-member
     output_dir.mkdir(parents=True, exist_ok=True)
 
     exclude_columns = ['Unnamed: 0','trans_date_trans_time', 'cc_num', 'first', 'last', 'street', 'city', 'state', 'zip', 'dob', 'trans_num', 'unix_time']
 
     numerical_features = df.select_dtypes(include=[np.number]).columns.difference(exclude_columns).tolist()
-    categorical_features = df.select_dtypes(exclude=[np.number]).columns.difference(exclude_columns).tolist()
+    #categorical_features = df.select_dtypes(exclude=[np.number]).columns.difference(exclude_columns).tolist()
 
     if numerical_features:
         plt.figure(figsize=(10, 8))
@@ -87,7 +90,6 @@ def eda(
         wandb.log({f"boxplot_{column}": wandb.Image(str(plot_path))})
 
     if 'is_fraud' in df.columns:
-        fraud_counts = df['is_fraud'].value_counts()
         fraud_distribution_plot = sns.countplot(x='is_fraud', data=df)
         fraud_distribution_path = output_dir / 'fraud_distribution.png'
         fraud_distribution_plot.figure.savefig(fraud_distribution_path)

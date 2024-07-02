@@ -1,3 +1,4 @@
+# pylint: disable=line-too-long
 """
 Model Selection Module for Fraud Detection
 
@@ -34,24 +35,28 @@ Note:
     Modify the script if your data or config structure differs.
 """
 
-import pandas as pd
+
 import json
 import logging
+from typing import Annotated
 
+import pandas as pd
 from sklearn.model_selection import GridSearchCV, StratifiedKFold, cross_val_score
 from sklearn.metrics import make_scorer, precision_score, recall_score, f1_score
 import typer
-from typing import Annotated
-from cloudpathlib import AnyPath
-import wandb
-import matplotlib.pyplot as plt
 
-from .utils import load_model_config, model_classes
+from cloudpathlib import AnyPath
+import matplotlib.pyplot as plt
+import wandb
+
 from config import CONFIG_DIR
+from .utils import load_model_config, model_classes
+
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-
+# pylint: disable=too-many-statements, too-many-locals
 def model_selection(
     train_data_path: Annotated[str, typer.Option("--train-data-path", help="Path to the training data")],
     config_path: Annotated[str, typer.Option("--config-path", help="Path to the model selection config")],
@@ -63,7 +68,7 @@ def model_selection(
     try:
         wandb.init(project=wandb_project, job_type="model_selection")
 
-        X_train = pd.read_csv(AnyPath(train_data_path) / 'X_train.csv')
+        x_train = pd.read_csv(AnyPath(train_data_path) / 'x_train.csv')
         y_train = pd.read_csv(AnyPath(train_data_path) / 'y_train.csv').values.ravel()
 
         config = load_model_config(AnyPath(config_path))
@@ -76,7 +81,7 @@ def model_selection(
                 models[model_name] = model_class(**model_info["parameters"])
                 param_grids[model_name] = model_info["grid_search"]
             except KeyError:
-                logger.error(f"Model {model_name} is not supported.")
+                logger.error("Model %s is not supported.", model_name)
                 raise
 
         best_models = {}
@@ -85,13 +90,13 @@ def model_selection(
 
         for name, model in models.items():
             clf = GridSearchCV(model, param_grids[name], cv=skf, scoring='f1')
-            clf.fit(X_train, y_train)
+            clf.fit(x_train, y_train)
             best_model = clf.best_estimator_
             best_models[name] = best_model
 
-            precision = cross_val_score(best_model, X_train, y_train, cv=skf, scoring=make_scorer(precision_score,average='macro')).mean()
-            recall = cross_val_score(best_model, X_train, y_train, cv=skf, scoring=make_scorer(recall_score,average='macro')).mean()
-            f1 = cross_val_score(best_model, X_train, y_train, cv=skf, scoring=make_scorer(f1_score,average='macro')).mean()
+            precision = cross_val_score(best_model, x_train, y_train, cv=skf, scoring=make_scorer(precision_score,average='macro')).mean()
+            recall = cross_val_score(best_model, x_train, y_train, cv=skf, scoring=make_scorer(recall_score,average='macro')).mean()
+            f1 = cross_val_score(best_model, x_train, y_train, cv=skf, scoring=make_scorer(f1_score,average='macro')).mean()
 
 
             model_metrics[name] = {'precision': precision, 'recall': recall, 'f1': f1}
@@ -99,9 +104,10 @@ def model_selection(
         best_model_name = max(model_metrics, key=lambda name: model_metrics[name]['f1'])
         best_model = best_models[best_model_name]
 
-        logger.info(f"Best model: {best_model_name}")
+        logger.info("Best model: %s", best_model_name)
 
         output_dir = AnyPath(output_path)
+        # pylint: disable=no-member
         output_dir.mkdir(parents=True, exist_ok=True)
         best_model_config = {
             "model": {
@@ -110,9 +116,9 @@ def model_selection(
             }
         }
         best_model_config_path = CONFIG_DIR / 'training.json'
-        with open(best_model_config_path, 'w') as f:
+        with open(best_model_config_path, 'w', encoding="uft-8") as f:
             json.dump(best_model_config, f)
-        logger.info(f"Best model parameters saved at: {best_model_config_path}")
+        logger.info("Best model parameters saved at: %s", best_model_config_path)
 
         model_comparison_df = pd.DataFrame(model_metrics).T
 
@@ -131,8 +137,8 @@ def model_selection(
         wandb.log({"model_comparison_table": wandb.Table(columns=['precision','recall','f1'],dataframe=model_comparison_df)})
         wandb.log({"model_comparison_plot": wandb.Image(str(comparison_plot_path))})
 
-    except Exception as e:
-        logger.error(f"An error occurred during model selection: {e}")
+    except Exception as error:
+        logger.error("An error occurred during model selection: %s",error)
         raise
 
 if __name__ == "__main__":

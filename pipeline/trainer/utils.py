@@ -1,6 +1,9 @@
-from cloudpathlib import AnyPath
+"""Utility functions for the training pipeline."""
+
 import json
 import logging
+
+from cloudpathlib import AnyPath
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import GradientBoostingClassifier
@@ -12,15 +15,16 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 def load_model_config(config_path: AnyPath):
+    """Load model configuration from a JSON file."""
     try:
-        with open(config_path, 'r') as f:
+        with open(config_path, 'r', encoding="uft-8") as f:
             config = json.load(f)
         return config
     except FileNotFoundError:
-        logger.error(f"Configuration file not found at path: {config_path}")
+        logger.error("Configuration file not found at path: %s", config_path)
         raise
     except json.JSONDecodeError:
-        logger.error(f"Error decoding JSON from configuration file at path: {config_path}")
+        logger.error("Error decoding JSON from configuration file at path: %s", config_path)
         raise
 
 model_classes = {

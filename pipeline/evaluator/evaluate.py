@@ -1,3 +1,4 @@
+# pylint: disable=line-too-long
 """
 Evaluation Module for Fraud Detection
 
@@ -31,11 +32,13 @@ Note:
     Modify the script if your data or model file structure differs.
 """
 
-import pandas as pd
+
 import logging
+from typing import Annotated
 from sklearn.metrics import classification_report, precision_score, recall_score, f1_score, roc_auc_score
 import typer
-from typing import Annotated
+import pandas as pd
+
 from cloudpathlib import AnyPath
 import joblib
 import wandb
@@ -54,13 +57,13 @@ def evaluate(
     try:
         wandb.init(project=wandb_project, job_type="evaluation")
 
-        X_test = pd.read_csv(AnyPath(test_data_path) / 'X_test.csv')
+        x_test = pd.read_csv(AnyPath(test_data_path) / 'x_test.csv')
         y_test = pd.read_csv(AnyPath(test_data_path) / 'y_test.csv')
 
         model = joblib.load(model_path)
 
-        y_pred = model.predict(X_test)
-        y_proba = model.predict_proba(X_test)[:, 1]
+        y_pred = model.predict(x_test)
+        y_proba = model.predict_proba(x_test)[:, 1]
 
         precision = precision_score(y_test, y_pred)
         recall = recall_score(y_test, y_pred)
@@ -75,14 +78,14 @@ def evaluate(
         })
 
         report = classification_report(y_test, y_pred, output_dict=True)
-        logger.info(f"Classification report:\n{classification_report(y_test, y_pred)}")
+        logger.info("Classification report:\n %s ", classification_report(y_test, y_pred))
 
         wandb.log({"classification_report": report})
 
         wandb.finish()
 
-    except Exception as e:
-        logger.error(f"An error occurred during model evaluation: {e}")
+    except Exception as error:
+        logger.error("An error occurred during model evaluation: %s", error)
         raise
 
 if __name__ == "__main__":

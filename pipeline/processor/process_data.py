@@ -1,3 +1,4 @@
+# pylint: disable=line-too-long
 """
 Data Preparation Module for Fraud Detection
 
@@ -14,7 +15,7 @@ The script performs the following operations:
 4. Extracts hour, day, and month from the transaction datetime
 5. Selects relevant features for the model
 6. Scales the features using StandardScaler
-7. Saves the prepared data (X_train, X_test, y_train, y_test) as CSV files
+7. Saves the prepared data (x_train, x_test, y_train, y_test) as CSV files
 
 Usage:
     Run this script from the command line with the required arguments:
@@ -31,10 +32,12 @@ Note:
     Modify the script if your data structure differs.
 """
 
-import pandas as pd
-from sklearn.preprocessing import StandardScaler
-import typer
 from typing import Annotated
+
+import typer
+import pandas as pd
+
+from sklearn.preprocessing import StandardScaler
 from cloudpathlib import AnyPath
 
 def data_preparation(
@@ -64,21 +67,22 @@ def data_preparation(
     features = ['amt', 'city_pop', 'hour', 'day', 'month', 'lat', 'long', 'merch_lat', 'merch_long']
     target = 'is_fraud'
 
-    X_train = df_train[features]
+    x_train = df_train[features]
     y_train = df_train[target]
 
-    X_test = df_test[features]
+    x_test = df_test[features]
     y_test = df_test[target]
 
     scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    X_test_scaled = scaler.transform(X_test)
+    x_train_scaled = scaler.fit_transform(x_train)
+    x_test_scaled = scaler.transform(x_test)
 
     output_dir = AnyPath(output_path)
+    # pylint: disable=no-member
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    pd.DataFrame(X_train_scaled, columns=features).to_csv(output_dir / 'X_train.csv', index=False)
-    pd.DataFrame(X_test_scaled, columns=features).to_csv(output_dir / 'X_test.csv', index=False)
+    pd.DataFrame(x_train_scaled, columns=features).to_csv(output_dir / 'x_train.csv', index=False)
+    pd.DataFrame(x_test_scaled, columns=features).to_csv(output_dir / 'x_test.csv', index=False)
     y_train.to_csv(output_dir / 'y_train.csv', index=False)
     y_test.to_csv(output_dir / 'y_test.csv', index=False)
 

@@ -1,3 +1,4 @@
+# pylint: disable=line-too-long
 """
 Training Module for Fraud Detection
 
@@ -35,13 +36,14 @@ Note:
     Modify the script if your data or config structure differs.
 """
 
-import pandas as pd
+
 import json
 import logging
+from typing import Annotated
+from pathlib import Path
 
 import typer
-from pathlib import Path
-from typing import Annotated
+import pandas as pd
 from cloudpathlib import AnyPath
 import joblib
 import wandb
@@ -51,7 +53,7 @@ from .utils import load_model_config, model_classes
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-
+# pylint: disable=too-many-locals
 def train(
     train_data_path: Annotated[str, typer.Option("--train-data-path", help="Path to the training data")],
     config_path: Annotated[str, typer.Option("--config-path", help="Path to the model training config")],
@@ -65,7 +67,7 @@ def train(
         wandb.init(project=wandb_project, job_type="training")
 
         # Load training data
-        X_train = pd.read_csv(Path(train_data_path) / 'X_train.csv')
+        x_train = pd.read_csv(Path(train_data_path) / 'x_train.csv')
         y_train = pd.read_csv(Path(train_data_path) / 'y_train.csv').values.ravel()
 
         # Load model configuration
@@ -79,32 +81,33 @@ def train(
             model_class = model_classes[model_name]
             model = model_class(**model_params)
         except KeyError:
-            logger.error(f"Model {model_name} is not supported.")
+            logger.error("Model %s is not supported.", model_name)
             raise
 
         # Train the model
-        model.fit(X_train, y_train)
+        model.fit(x_train, y_train)
 
         # Log model training to WandB
-        wandb.sklearn.plot_learning_curve(model, X_train, y_train)
+        wandb.sklearn.plot_learning_curve(model, x_train, y_train)
         wandb.sklearn.plot_class_proportions(y_train)
         wandb.log({"parameters": model_params})
 
         # Save the trained model
         output_dir = AnyPath(output_path)
+        # pylint: disable=no-member
         output_dir.mkdir(parents=True, exist_ok=True)
         model_path = output_dir / 'trained_model.pkl'
         joblib.dump(model, model_path)
-        logger.info(f"Model saved at: {model_path}")
+        logger.info("Model saved at: %s", model_path)
 
         # Log the path to the trained model in WandB
         wandb.log({"model_path": str(model_path)})
 
         # Save the final model parameters
         final_params_path = output_dir / 'final_model_parameters.json'
-        with open(final_params_path, 'w') as f:
+        with open(final_params_path, 'w',encoding="uft-8") as f:
             json.dump(model_params, f)
-        logger.info(f"Final model parameters saved at: {final_params_path}")
+        logger.info("Final model parameters saved at: %s", final_params_path)
 
         # Log the final model parameters to WandB
         artifact = wandb.Artifact(name='final_model_parameters', type='parameters', description='Final model parameters', metadata=model_params)
@@ -115,7 +118,7 @@ def train(
         wandb.finish()
 
     except Exception as e:
-        logger.error(f"An error occurred during model training: {e}")
+        logger.error("An error occurred during model training: %s", e)
         raise
 
 if __name__ == "__main__":
