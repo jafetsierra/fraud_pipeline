@@ -2,50 +2,25 @@
 import pandas as pd
 import json
 import logging
-from sklearn.linear_model import LogisticRegression
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import GradientBoostingClassifier
-from lightgbm import LGBMClassifier
-from xgboost import XGBClassifier
+
 from sklearn.model_selection import GridSearchCV, StratifiedKFold, cross_val_score
 from sklearn.metrics import make_scorer, precision_score, recall_score, f1_score
 import typer
-from pathlib import Path
 from typing import Annotated
 from cloudpathlib import AnyPath
-import joblib
 import wandb
 import matplotlib.pyplot as plt
 
-# Configure logging
+from .utils import load_model_config, model_classes
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Dictionary to map model names to their classes
-model_classes = {
-    "LogisticRegression": LogisticRegression,
-    "DecisionTreeClassifier": DecisionTreeClassifier,
-    "GradientBoostingClassifier": GradientBoostingClassifier,
-    "LightGBM": LGBMClassifier,
-    "XGBoost": XGBClassifier
-}
-
-def load_model_config(config_path: Path):
-    try:
-        with open(config_path, 'r') as f:
-            config = json.load(f)
-        return config
-    except FileNotFoundError:
-        logger.error(f"Configuration file not found at path: {config_path}")
-        raise
-    except json.JSONDecodeError:
-        logger.error(f"Error decoding JSON from configuration file at path: {config_path}")
-        raise
 
 def model_selection(
     train_data_path: Annotated[str, typer.Option("--train-data-path", help="Path to the training data")],
     config_path: Annotated[str, typer.Option("--config-path", help="Path to the model selection config")],
-    output_path: Annotated[str, typer.Option("--output-path", help="Path to save the best model")],
+    output_path: Annotated[str, typer.Option("--output-path", help="Path to save the best model config")],
     wandb_project: Annotated[str, typer.Option("--wandb-project", help="WandB project name")],
 ):
     """Select the best model for fraud detection."""
@@ -55,11 +30,11 @@ def model_selection(
         wandb.init(project=wandb_project, job_type="model_selection")
 
         # Load training data
-        X_train = pd.read_csv(Path(train_data_path) / 'X_train.csv')
-        y_train = pd.read_csv(Path(train_data_path) / 'y_train.csv').values.ravel()
+        X_train = pd.read_csv(AnyPath(train_data_path) / 'X_train.csv')
+        y_train = pd.read_csv(AnyPath(train_data_path) / 'y_train.csv').values.ravel()
 
         # Load model configuration
-        config = load_model_config(Path(config_path))
+        config = load_model_config(AnyPath(config_path))
 
         models = {}
         param_grids = {}
@@ -94,10 +69,19 @@ def model_selection(
 
         logger.info(f"Best model: {best_model_name}")
 
-        # Save the best model
+        # Save the best model parameters to config
         output_dir = AnyPath(output_path)
         output_dir.mkdir(parents=True, exist_ok=True)
-        joblib.dump(best_model, output_dir / 'best_model.pkl')
+        best_model_config = {
+            "model": {
+                "name": best_model_name,
+                "parameters": best_model.get_params()
+            }
+        }
+        best_model_config_path = output_dir / 'training.json'
+        with open(best_model_config_path, 'w') as f:
+            json.dump(best_model_config, f)
+        logger.info(f"Best model parameters saved at: {best_model_config_path}")
 
         # Create a DataFrame for model comparison
         model_comparison_df = pd.DataFrame(model_metrics).T

@@ -1,82 +1,89 @@
-import logging
-import typer
+# training.py
+import pandas as pd
 import json
-from typer import Option
-from typing_extensions import Annotated
+import logging
 from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import GradientBoostingClassifier
+from lightgbm import LGBMClassifier
+from xgboost import XGBClassifier
+from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score
+import typer
+from pathlib import Path
+from typing import Annotated
+from cloudpathlib import AnyPath
+import joblib
+import wandb
 
-from pipeline.preprocess.dataset import TransactionDataset
-from pipeline.trainer.sklearn_trainer import SklearnTrainer
+from .utils import load_model_config, model_classes
 
-app = typer.Typer()
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
-# Dictionary of available models
-MODEL_CLASSES = {
-    "LogisticRegression": LogisticRegression,
-    "RandomForestClassifier": RandomForestClassifier
-}
 
-def load_model(model_name: str, model_params: dict):
-    model_class = MODEL_CLASSES.get(model_name)
-    if model_class:
-        return model_class(**model_params)
-    raise ValueError(f"Model {model_name} is not supported.")
-
-@app.command()
-def main(
-    config_path: Annotated[str, Option("--config-path", help="Path to the configuration file")],
-    train_data_path: Annotated[str, Option("--train-data-path", help="Path to the training data")],
-    test_data_path: Annotated[str, Option("--test-data-path", help="Path to the test data")],
-    cv: Annotated[int, Option("--cv", help="Number of cross-validation folds")],
+def train(
+    train_data_path: Annotated[str, typer.Option("--train-data-path", help="Path to the training data")],
+    config_path: Annotated[str, typer.Option("--config-path", help="Path to the model training config")],
+    output_path: Annotated[str, typer.Option("--output-path", help="Path to save the trained model")],
+    wandb_project: Annotated[str, typer.Option("--wandb-project", help="WandB project name")],
 ):
-    # Load the configuration file
-    with open(config_path, 'r') as f:
-        config = json.load(f)
+    """Train the selected model."""
 
-    # Load the processed data
-    train_data = TransactionDataset.load(f"{train_data_path}_features.csv", f"{train_data_path}_labels.csv")
-    test_data = TransactionDataset.load(f"{test_data_path}_features.csv", f"{test_data_path}_labels.csv")
+    try:
+        # Initialize WandB
+        wandb.init(project=wandb_project, job_type="training")
 
-    # Set up baseline model
-    baseline_model = load_model(config["baseline_model"]["name"], config["baseline_model"]["parameters"])
-    steps = [("classifier", baseline_model)]
+        # Load training data
+        X_train = pd.read_csv(Path(train_data_path) / 'X_train.csv')
+        y_train = pd.read_csv(Path(train_data_path) / 'y_train.csv').values.ravel()
 
-    baseline_trainer = SklearnTrainer(steps)
+        # Load model configuration
+        config = load_model_config(Path(config_path))
 
-    # Perform cross-validation for baseline model
-    baseline_cv_score = baseline_trainer.cross_validate(train_data, cv=cv)
-    logging.info(f"Baseline model cross-validation mean accuracy: {baseline_cv_score}")
+        # Extract model and parameters
+        model_name = config["model"]["name"]
+        model_params = config["model"]["parameters"]
 
-    # Train baseline model
-    baseline_trainer.train(train_data)
+        try:
+            model_class = model_classes[model_name]
+            model = model_class(**model_params)
+        except KeyError:
+            logger.error(f"Model {model_name} is not supported.")
+            raise
 
-    # Evaluate baseline model
-    baseline_accuracy = baseline_trainer.evaluate(test_data)
-    logging.info(f"Baseline model test accuracy: {baseline_accuracy}")
+        # Train the model
+        model.fit(X_train, y_train)
 
-    # Save the baseline model
-    baseline_trainer.save_model('path/to/save/baseline_model.pkl')
+        # Log model training to WandB
+        wandb.sklearn.plot_learning_curve(model, X_train, y_train)
+        wandb.sklearn.plot_class_proportions(y_train)
+        wandb.log({"parameters": model_params})
 
-    # Set up production model
-    production_model = load_model(config["production_model"]["name"], config["production_model"]["parameters"])
-    steps = [("classifier", production_model)]
+        # Save the trained model
+        output_dir = AnyPath(output_path)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        model_path = output_dir / 'trained_model.pkl'
+        joblib.dump(model, model_path)
+        logger.info(f"Model saved at: {model_path}")
 
-    production_trainer = SklearnTrainer(steps)
+        # Log the path to the trained model in WandB
+        wandb.log({"model_path": str(model_path)})
 
-    # Perform cross-validation for production model
-    production_cv_score = production_trainer.cross_validate(train_data, cv=cv)
-    logging.info(f"Production model cross-validation mean accuracy: {production_cv_score}")
+        # Save the final model parameters
+        final_params_path = output_dir / 'final_model_parameters.json'
+        with open(final_params_path, 'w') as f:
+            json.dump(model_params, f)
+        logger.info(f"Final model parameters saved at: {final_params_path}")
 
-    # Train production model
-    production_trainer.train(train_data)
+        # Log the final model parameters to WandB
+        wandb.log({"final_model_parameters": wandb.Artifact(name='final_model_parameters', type='parameters', description='Final model parameters', metadata=model_params)})
 
-    # Evaluate production model
-    production_accuracy = production_trainer.evaluate(test_data)
-    logging.info(f"Production model test accuracy: {production_accuracy}")
+        # Complete WandB run
+        wandb.finish()
 
-    # Save the production model
-    production_trainer.save_model('path/to/save/production_model.pkl')
+    except Exception as e:
+        logger.error(f"An error occurred during model training: {e}")
+        raise
 
 if __name__ == "__main__":
-    app()
+    typer.run(train)

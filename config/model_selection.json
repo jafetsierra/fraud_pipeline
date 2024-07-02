@@ -16,15 +16,6 @@
                 "max_depth": [3, 5, 7]
             }
         },
-        "GradientBoostingClassifier": {
-            "parameters": {
-                "random_state": 42
-            },
-            "grid_search": {
-                "n_estimators": [100, 200],
-                "learning_rate": [0.01, 0.1]
-            }
-        },
         "LightGBM": {
             "parameters": {
                 "random_state": 42
@@ -37,7 +28,6 @@
         "XGBoost": {
             "parameters": {
                 "random_state": 42,
-                "use_label_encoder": false,
                 "eval_metric": "logloss"
             },
             "grid_search": {
