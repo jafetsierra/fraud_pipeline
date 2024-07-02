@@ -1,3 +1,36 @@
+"""
+Data Preparation Module for Fraud Detection
+
+This module prepares the data for the fraud detection model by performing
+various preprocessing steps on both training and test datasets.
+
+Functions:
+    data_preparation: Main function to prepare data for training.
+
+The script performs the following operations:
+1. Loads training and test data from CSV files
+2. Fills missing values using forward fill method
+3. Converts transaction date/time to datetime format
+4. Extracts hour, day, and month from the transaction datetime
+5. Selects relevant features for the model
+6. Scales the features using StandardScaler
+7. Saves the prepared data (X_train, X_test, y_train, y_test) as CSV files
+
+Usage:
+    Run this script from the command line with the required arguments:
+    python data_preparation.py --train-input-path <path_to_train_csv> --test-input-path <path_to_test_csv> --output-path <path_to_save_prepared_data>
+
+Dependencies:
+    - pandas
+    - scikit-learn
+    - typer
+    - cloudpathlib
+
+Note:
+    This script assumes specific column names and data structure in the input CSV files.
+    Modify the script if your data structure differs.
+"""
+
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 import typer

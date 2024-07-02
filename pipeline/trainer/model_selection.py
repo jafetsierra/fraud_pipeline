@@ -1,4 +1,39 @@
-# model_selection.py
+"""
+Model Selection Module for Fraud Detection
+
+This module performs model selection for the fraud detection pipeline by comparing
+different machine learning models and their hyperparameters.
+
+Functions:
+    model_selection: Main function to select the best model for fraud detection.
+
+The script performs the following operations:
+1. Loads training data and model configuration
+2. Initializes models based on the configuration
+3. Performs grid search with cross-validation for each model
+4. Evaluates models using precision, recall, and F1 score
+5. Selects the best model based on F1 score
+6. Saves the best model configuration
+7. Generates and saves model comparison plots and metrics
+8. Logs results to Weights & Biases (wandb)
+
+Usage:
+    Run this script from the command line with the required arguments:
+    python model_selection.py --train-data-path <path_to_train_data> --config-path <path_to_config> --output-path <path_to_save_output> --wandb-project <wandb_project_name>
+
+Dependencies:
+    - pandas
+    - scikit-learn
+    - typer
+    - cloudpathlib
+    - wandb
+    - matplotlib
+
+Note:
+    This script assumes a specific structure for the input data and configuration files.
+    Modify the script if your data or config structure differs.
+"""
+
 import pandas as pd
 import json
 import logging

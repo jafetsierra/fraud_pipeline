@@ -1,13 +1,44 @@
-# training.py
+"""
+Training Module for Fraud Detection
+
+This module trains the selected model for the fraud detection pipeline using the
+prepared data and the configuration from the model selection phase.
+
+Functions:
+    train: Main function to train the selected model for fraud detection.
+
+The script performs the following operations:
+1. Loads training data
+2. Loads model configuration
+3. Initializes the selected model with the best parameters
+4. Trains the model on the training data
+5. Logs training metrics and plots to Weights & Biases (wandb)
+6. Saves the trained model
+7. Saves and logs the final model parameters
+
+Usage:
+    Run this script from the command line with the required arguments:
+    python training.py --train-data-path <path_to_train_data> --config-path <path_to_config> --output-path <path_to_save_output> --wandb-project <wandb_project_name>
+
+Dependencies:
+    - pandas
+    - scikit-learn
+    - typer
+    - cloudpathlib
+    - wandb
+    - joblib
+    - lightgbm
+    - xgboost
+
+Note:
+    This script assumes a specific structure for the input data and configuration files.
+    Modify the script if your data or config structure differs.
+"""
+
 import pandas as pd
 import json
 import logging
-from sklearn.linear_model import LogisticRegression
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import GradientBoostingClassifier
-from lightgbm import LGBMClassifier
-from xgboost import XGBClassifier
-from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score
+
 import typer
 from pathlib import Path
 from typing import Annotated

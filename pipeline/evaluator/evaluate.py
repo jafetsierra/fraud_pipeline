@@ -1,9 +1,40 @@
-# evaluation.py
+"""
+Evaluation Module for Fraud Detection
+
+This module evaluates the trained model for the fraud detection pipeline using the test data.
+
+Functions:
+    evaluate: Main function to evaluate the trained model for fraud detection.
+
+The script performs the following operations:
+1. Loads test data
+2. Loads the trained model
+3. Makes predictions on the test data
+4. Calculates evaluation metrics (precision, recall, F1 score, ROC AUC)
+5. Generates a classification report
+6. Logs evaluation metrics and the classification report to Weights & Biases (wandb)
+
+Usage:
+    Run this script from the command line with the required arguments:
+    python evaluation.py --test-data-path <path_to_test_data> --model-path <path_to_trained_model> --wandb-project <wandb_project_name>
+
+Dependencies:
+    - pandas
+    - scikit-learn
+    - typer
+    - cloudpathlib
+    - wandb
+    - joblib
+
+Note:
+    This script assumes a specific structure for the input data and trained model file.
+    Modify the script if your data or model file structure differs.
+"""
+
 import pandas as pd
 import logging
 from sklearn.metrics import classification_report, precision_score, recall_score, f1_score, roc_auc_score
 import typer
-from pathlib import Path
 from typing import Annotated
 from cloudpathlib import AnyPath
 import joblib
@@ -23,8 +54,8 @@ def evaluate(
     try:
         wandb.init(project=wandb_project, job_type="evaluation")
 
-        X_test = pd.read_csv(Path(test_data_path) / 'X_test.csv')
-        y_test = pd.read_csv(Path(test_data_path) / 'y_test.csv')
+        X_test = pd.read_csv(AnyPath(test_data_path) / 'X_test.csv')
+        y_test = pd.read_csv(AnyPath(test_data_path) / 'y_test.csv')
 
         model = joblib.load(model_path)
 

@@ -1,4 +1,32 @@
-# eda.py
+"""
+Exploratory Data Analysis (EDA) Script
+
+This module performs exploratory data analysis on a given dataset and logs the results to Weights & Biases (wandb).
+
+The script reads a CSV file, processes the data, generates various plots and statistical summaries,
+and saves the results both locally and to a wandb project.
+
+Functions:
+    eda: Main function to perform exploratory data analysis.
+
+Usage:
+    Run this script from the command line with the required arguments:
+    python eda.py --input-path <path_to_input_csv> --output-path <path_to_save_plots> --wandb-project <wandb_project_name>
+
+Dependencies:
+    - pandas
+    - seaborn
+    - matplotlib
+    - typer
+    - cloudpathlib
+    - wandb
+    - numpy
+
+Note:
+    This script assumes that the input CSV file has a specific structure and certain columns.
+    Make sure to review and modify the script if your data structure differs.
+"""
+
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
