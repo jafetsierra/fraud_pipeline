@@ -12,7 +12,7 @@ import wandb
 import matplotlib.pyplot as plt
 
 from .utils import load_model_config, model_classes
-
+from config import CONFIG_DIR
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
@@ -26,14 +26,11 @@ def model_selection(
     """Select the best model for fraud detection."""
 
     try:
-        # Initialize WandB
         wandb.init(project=wandb_project, job_type="model_selection")
 
-        # Load training data
         X_train = pd.read_csv(AnyPath(train_data_path) / 'X_train.csv')
         y_train = pd.read_csv(AnyPath(train_data_path) / 'y_train.csv').values.ravel()
 
-        # Load model configuration
         config = load_model_config(AnyPath(config_path))
 
         models = {}
@@ -57,19 +54,18 @@ def model_selection(
             best_model = clf.best_estimator_
             best_models[name] = best_model
 
-            precision = cross_val_score(best_model, X_train, y_train, cv=skf, scoring=make_scorer(precision_score)).mean()
-            recall = cross_val_score(best_model, X_train, y_train, cv=skf, scoring=make_scorer(recall_score)).mean()
-            f1 = cross_val_score(best_model, X_train, y_train, cv=skf, scoring=make_scorer(f1_score)).mean()
+            precision = cross_val_score(best_model, X_train, y_train, cv=skf, scoring=make_scorer(precision_score,average='macro')).mean()
+            recall = cross_val_score(best_model, X_train, y_train, cv=skf, scoring=make_scorer(recall_score,average='macro')).mean()
+            f1 = cross_val_score(best_model, X_train, y_train, cv=skf, scoring=make_scorer(f1_score,average='macro')).mean()
+
 
             model_metrics[name] = {'precision': precision, 'recall': recall, 'f1': f1}
 
-        # Find the best model based on F1 score
         best_model_name = max(model_metrics, key=lambda name: model_metrics[name]['f1'])
         best_model = best_models[best_model_name]
 
         logger.info(f"Best model: {best_model_name}")
 
-        # Save the best model parameters to config
         output_dir = AnyPath(output_path)
         output_dir.mkdir(parents=True, exist_ok=True)
         best_model_config = {
@@ -78,30 +74,25 @@ def model_selection(
                 "parameters": best_model.get_params()
             }
         }
-        best_model_config_path = output_dir / 'training.json'
+        best_model_config_path = CONFIG_DIR / 'training.json'
         with open(best_model_config_path, 'w') as f:
             json.dump(best_model_config, f)
         logger.info(f"Best model parameters saved at: {best_model_config_path}")
 
-        # Create a DataFrame for model comparison
         model_comparison_df = pd.DataFrame(model_metrics).T
 
-        # Save the DataFrame as a CSV file
         model_comparison_df.to_csv(output_dir / 'model_comparison.csv', index=True)
 
-        # Create a bar plot for model comparison
         model_comparison_df.plot(kind='bar', figsize=(12, 8))
         plt.xlabel('Model')
         plt.ylabel('Score')
         plt.title('Model Comparison - Precision, Recall, F1')
         plt.legend(loc='upper right')
 
-        # Save the plot locally
         comparison_plot_path = output_dir / 'model_comparison.png'
         plt.savefig(comparison_plot_path)
         plt.close()
 
-        # Log the table and plot to WandB
         wandb.log({"model_comparison_table": wandb.Table(columns=['precision','recall','f1'],dataframe=model_comparison_df)})
         wandb.log({"model_comparison_plot": wandb.Image(str(comparison_plot_path))})
 

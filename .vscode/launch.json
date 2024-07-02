@@ -80,5 +80,36 @@
                 "--wandb-project", "fraud_detection"
             ]
         },
+        {
+            "name": "Python: model_training",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pipeline.trainer.train",
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/.venv/bin/python"
+            },
+            "args": [
+                "--train-data-path", "data/prepared_data",
+                "--config-path", "config/training.json",
+                "--output-path", "models",
+                "--wandb-project", "fraud_detection"
+            ]
+        },
+        {
+            "name": "Python: model_evaluation",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pipeline.evaluator.evaluate",
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/.venv/bin/python"
+            },
+            "args": [
+                "--test-data-path", "data/prepared_data",
+                "--model-path", "models/trained_model.pkl",
+                "--wandb-project", "fraud_detection"
+            ]
+        },
     ]
 }

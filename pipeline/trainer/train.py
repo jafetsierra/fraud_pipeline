@@ -76,7 +76,9 @@ def train(
         logger.info(f"Final model parameters saved at: {final_params_path}")
 
         # Log the final model parameters to WandB
-        wandb.log({"final_model_parameters": wandb.Artifact(name='final_model_parameters', type='parameters', description='Final model parameters', metadata=model_params)})
+        artifact = wandb.Artifact(name='final_model_parameters', type='parameters', description='Final model parameters', metadata=model_params)
+        wandb.log_artifact(artifact)
+        wandb.log({"final_model_parameters": artifact.id})
 
         # Complete WandB run
         wandb.finish()
