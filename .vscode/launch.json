@@ -1,0 +1,115 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: process_data",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/pipeline/preprocess/process_data.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--train-path", "archive/fraudTrain.csv",
+                "--test-path", "archive/fraudTest.csv",
+                "--label-column", "is_fraud",
+                "--train-data-path", "data/train_data",
+                "--test-data-path", "data/test_data"
+            ],
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/.venv/bin/python"
+            }
+        },
+        {
+            "name": "Python Debugger: train",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/pipeline/trainer/train.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--config-path", "config/config.json",
+                "--train-data-path", "data/train_data",
+                "--test-data-path", "data/test_data",
+                "--cv", "5"
+            ],
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/.venv/bin/python"
+            }
+        },
+        {
+            "name": "Python: EDA",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pipeline.eda.eda",
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/.venv/bin/python"
+            },
+            "args": [
+                "--input-path", "data/fraudTrain.csv",
+                "--output-path", "data/eda_output",
+                "--wandb-project", "fraud_detection"
+            ]
+        },
+        {
+            "name": "Python: preprocess",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pipeline.preprocess.process_data",
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/.venv/bin/python"
+            },
+            "args": [
+                "--train-input-path", "data/fraudTrain.csv",
+                "--test-input-path", "data/fraudTest.csv",
+                "--output-path", "data/prepared_data",
+            ]
+        },
+        {
+            "name": "Python: model_selection",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pipeline.trainer.model_selection",
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/.venv/bin/python"
+            },
+            "args": [
+                "--train-data-path", "data/prepared_data",
+                "--config-path", "config/model_selection.json",
+                "--output-path", "models",
+                "--wandb-project", "fraud_detection"
+            ]
+        },
+        {
+            "name": "Python: model_training",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pipeline.trainer.train",
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/.venv/bin/python"
+            },
+            "args": [
+                "--train-data-path", "data/prepared_data",
+                "--config-path", "config/training.json",
+                "--output-path", "models",
+                "--wandb-project", "fraud_detection"
+            ]
+        },
+        {
+            "name": "Python: model_evaluation",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pipeline.evaluator.evaluate",
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/.venv/bin/python"
+            },
+            "args": [
+                "--test-data-path", "data/prepared_data",
+                "--model-path", "models/trained_model.pkl",
+                "--wandb-project", "fraud_detection"
+            ]
+        },
+    ]
+}
